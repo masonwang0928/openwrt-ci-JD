@@ -20,7 +20,10 @@ env:
 jobs:
   Build:
     runs-on: ubuntu-latest
-
+    # 全局权限，确保所有步骤都有写权限
+    permissions:
+      contents: write
+      actions: read
     steps:
     - name: Check Server Performance(检查服务器性能)
       run: |
@@ -121,6 +124,8 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
         echo "DATE=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y.%m.%d")" >> $GITHUB_ENV
+        # 生成唯一TAG
+        echo "RELEASE_TAG=${{ env.FIRMWARE_TAG }}_$(date +"%Y%m%d%H%M%S")" >> $GITHUB_ENV
 
     - name: Check Space Usage(检查空间使用情况)
       if: (!cancelled())
@@ -157,8 +162,10 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         name: R${{ env.DATE }} for ${{ env.FIRMWARE_TAG }}
+        tag: ${{ env.RELEASE_TAG }}  # 唯一TAG，解决403
         allowUpdates: true
-        tag: ${{ env.FIRMWARE_TAG }}
+        removeArtifacts: false
+        replacesArtifacts: true
         token: ${{ secrets.GITHUB_TOKEN }}
         artifacts: ${{ env.FIRMWARE_PATH }}/*
         body: |
